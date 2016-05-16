@@ -48,8 +48,8 @@ public class MainFrame extends JFrame
 
 			for (int i = 0; i < particles.size(); i++)
 			{
-				Rectangle2D rect = new Rectangle2D.Double(centerAndScale(particles.get(i).m_Position[0],true),
-						centerAndScale(particles.get(i).m_Position[1],false),
+				Rectangle2D rect = new Rectangle2D.Double(centerAndScale(particles.get(i).m_Position[0]+pSize/2,true),
+						centerAndScale(particles.get(i).m_Position[1]+pSize/2,false),
 						scale(pSize, true), scale(pSize, false));
 
 				g2.fill(rect);

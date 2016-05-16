@@ -155,7 +155,7 @@ public class App implements KeyListener, MouseListener
 			app.updateParticles();
 			app.updateView();
 			
-			Thread.sleep(5);
+			Thread.sleep(1);
 		}
 	}
 }
