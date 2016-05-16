@@ -12,10 +12,13 @@ public class App implements KeyListener, MouseListener
 	static int N = 64;
 	static double dt = 0.1;
 	static double d = 5;
+	private double[] gr = {0, 0.001};
 	
 	// Simulation variables
 	boolean dsim, dump_frames;
 	int frame_number;
+
+	final int VECSIZE = 2;
 	
 	Vector<Particle> pVector;
 	
@@ -74,7 +77,11 @@ public class App implements KeyListener, MouseListener
 			// TODO: Do simulation step
 			for (int i = 0; i < pVector.size(); i++)
 			{
-				pVector.get(i).m_Position[1] += 1;
+				Particle p = pVector.get(i);
+				for(int j = 0; j < VECSIZE; j++){
+					p.m_Velocity[j] += dt*gr[j];
+					p.m_Position[j] += dt*p.m_Velocity[j];
+				}
 			}
 		}
 		else
@@ -94,7 +101,7 @@ public class App implements KeyListener, MouseListener
 		// Reset particles to initial position
 		for (int i = 0; i < pVector.size(); i++)
 		{
-			pVector.get(i).m_Position = pVector.get(i).m_ConstructPos;
+			pVector.get(i).reset();
 		}
 	}
 	

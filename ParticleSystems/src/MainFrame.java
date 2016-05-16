@@ -32,17 +32,40 @@ public class MainFrame extends JFrame
 			particles = parts;
 			this.repaint();
 		}
-		
+
 		public void paintComponent(Graphics g)
 		{
+			super.paintComponent(g);
 			Graphics2D g2 = (Graphics2D) g;
-			
+
+			paintParticles(g2);
+		}
+
+		public void paintParticles(Graphics2D g2)
+		{
+
+			double pSize = 0.03;
+
 			for (int i = 0; i < particles.size(); i++)
 			{
-				Rectangle2D rect = new Rectangle2D.Double(particles.get(i).m_Position[0], particles.get(i).m_Position[1], 10, 10);
-				
+				Rectangle2D rect = new Rectangle2D.Double(centerAndScale(particles.get(i).m_Position[0],true),
+						centerAndScale(particles.get(i).m_Position[1],false),
+						scale(pSize, true), scale(pSize, false));
+
 				g2.fill(rect);
 			}
+		}
+
+		public double centerAndScale(double s, boolean isX){
+			return scale(center(s),isX);
+		}
+
+		public double scale(double s, boolean isX){
+			return (s/2)*((isX)?this.getWidth():this.getHeight());
+		}
+
+		public double center(double s){
+			return s+1;
 		}
 	}
 }

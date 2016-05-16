@@ -13,12 +13,7 @@ public class Particle
 	
 	public void reset()
 	{
-		m_Position = m_ConstructPos;
+		m_Position = m_ConstructPos.clone();
 		m_Velocity = new double[] {0, 0};
-	}
-	
-	public void draw()
-	{
-		
 	}
 }
