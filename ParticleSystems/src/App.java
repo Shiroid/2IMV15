@@ -12,15 +12,13 @@ public class App implements KeyListener, MouseListener
 	static int N = 64;
 	static double dt = 0.1;
 	static double d = 5;
-	private double[] gr = {0, 0.001};
 	
 	// Simulation variables
 	boolean dsim, dump_frames;
 	int frame_number;
 
-	final int VECSIZE = 2;
-	
 	Vector<Particle> pVector;
+	Vector<Force> fVector;
 	
 	MainFrame frame;
 	
@@ -48,8 +46,11 @@ public class App implements KeyListener, MouseListener
 		pVector.add(new Particle(center[0] + offset[0], center[1] + offset[1]));
 		pVector.add(new Particle(center[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1]));
 		pVector.add(new Particle(center[0] + offset[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1] + offset[1]));
-		
+
 		// TODO: Add constraints
+		fVector = new Vector<Force>();
+		fVector.add(new DirectionalForce(pVector, new double[]{0, 0.0001}));//Gravity
+		fVector.add(new SpringForce(pVector.get(0), pVector.get(1), 0.01, 0.1, 0.3));
 	}
 	
 	public void openWindow()
@@ -75,13 +76,18 @@ public class App implements KeyListener, MouseListener
 		if (dsim)
 		{
 			// TODO: Do simulation step
+			//Add forces to particles
+			for (int i = 0; i < fVector.size(); i++)
+			{
+				fVector.get(i).apply();
+			}
+			//Apply forces and resulting velocity
 			for (int i = 0; i < pVector.size(); i++)
 			{
 				Particle p = pVector.get(i);
-				for(int j = 0; j < VECSIZE; j++){
-					p.m_Velocity[j] += dt*gr[j];
-					p.m_Position[j] += dt*p.m_Velocity[j];
-				}
+				p.applyForce(dt);
+				p.applyVelocity(dt);
+				p.clearForce();
 			}
 		}
 		else

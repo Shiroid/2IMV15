@@ -4,11 +4,10 @@ import java.util.Vector;
  * Created by leo on 16-5-16.
  */
 public class DirectionalForce extends Force {
-    private Vector<Particle> pVector;
-    private double[] vec;
+    protected double[] vec;
 
     public DirectionalForce(Vector<Particle> pVector, double[] vec){
-        this.pVector = pVector;
+        this.setParticles(pVector);
         this.vec = vec;
     }
 
