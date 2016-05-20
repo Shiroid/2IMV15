@@ -36,7 +36,7 @@ public class VectorMath {
         return result;
     }
 
-    public static double[] invert(double[] a){
+    public static double[] minus(double[] a){
         double[] result = new double[VECSIZE];
         for(int i = 0; i < VECSIZE; i++){
             result[i] = -a[i];
