@@ -21,6 +21,7 @@ public class App implements KeyListener, MouseListener
 
 	Vector<Particle> pVector;
 	Vector<Force> fVector;
+	Vector<Constraint> cVector;
 	
 	MainFrame frame;
 	
@@ -44,15 +45,16 @@ public class App implements KeyListener, MouseListener
 		// Create three particles, attach them to each other, then add a
 		// circular wire constraint to the first.
 		pVector = new Vector<Particle>();
+		fVector = new Vector<Force>();
+		cVector = new Vector<Constraint>();
 		
-		pVector.add(new Particle(center[0] + offset[0], center[1] + offset[1]));
-		pVector.add(new Particle(center[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1]));
-		pVector.add(new Particle(center[0] + offset[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1] + offset[1]));
+		addParticle(new Particle(center[0] + offset[0], center[1] + offset[1]));
+		addParticle(new Particle(center[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1]));
+		addParticle(new Particle(center[0] + offset[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1] + offset[1]));
 
 		// TODO: Add constraints
-		fVector = new Vector<Force>();
-		fVector.add(new DirectionalForce(pVector, new double[]{0, 0.0001}));//Gravity
-		fVector.add(new SpringForce(pVector.get(0), pVector.get(1), 0.01, 0.1, 0.3));
+		addForce(new DirectionalForce(pVector, new double[]{0, 0.0001}));//Gravity
+		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.01, 0.1, 0.3));
 	}
 	
 	public void openWindow()
@@ -68,6 +70,23 @@ public class App implements KeyListener, MouseListener
 		frame.addKeyListener(this);
 		frame.addMouseListener(this);
 	}
+
+	public void addParticle(Particle p){
+		int id = pVector.size();
+		pVector.add(p);
+		p.setID(id);
+	}
+
+	public void addForce(Force f){
+		int id = fVector.size();
+		fVector.add(f);
+	}
+
+	public void addConstraint(Constraint c){
+		int id = cVector.size();
+		cVector.add(c);
+		c.setID(id);
+	}
 	
 	/***
 	 * Render functions
@@ -78,6 +97,10 @@ public class App implements KeyListener, MouseListener
 		if (dsim)
 		{
 			// TODO: Do simulation step
+			for (int i = 0; i < pVector.size(); i++)
+			{
+				pVector.get(i).clearForce();
+			}
 			//Add forces to particles
 			for (int i = 0; i < fVector.size(); i++)
 			{
@@ -89,7 +112,6 @@ public class App implements KeyListener, MouseListener
 				Particle p = pVector.get(i);
 				p.applyForce(dt);
 				p.applyVelocity(dt);
-				p.clearForce();
 			}
 		}
 		else

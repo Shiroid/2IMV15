@@ -5,10 +5,12 @@ import java.util.Vector;
  */
 public class CircularWireConstraint extends Constraint {
     private double[] center;
+    private double r;
 
-    public CircularWireConstraint(Vector<Particle> pVector, double[] center){
+    public CircularWireConstraint(Vector<Particle> pVector, double[] center, double r){
         setParticles(pVector);
         this.center = center;
+        this.r = r;
     }
 
     void setParticles(Vector<Particle> pVector){
@@ -16,21 +18,36 @@ public class CircularWireConstraint extends Constraint {
         this.pVector = pVector;
     }
 
-    void apply(){
-
-    }
-
     @Override
     ConstraintValue getC0(){
         Particle p0 = pVector.get(0);
+        double[] diff = VectorMath.subtract(p0.m_Position, center);
         return new ConstraintValue(new int[]{p0.id},
-                new double[]{0.5*(VectorMath.dotProd(p0.m_Position, p0.m_Position) - 1)});
+                new double[]{(VectorMath.dotProd(diff, diff) - r)});
     }
 
     @Override
     ConstraintValue getC1(){
         Particle p0 = pVector.get(0);
+        double[] diff = VectorMath.subtract(p0.m_Position, center);
         return new ConstraintValue(new int[]{p0.id},
-                new double[]{VectorMath.dotProd(p0.m_Position, p0.m_Velocity)});
+                new double[]{VectorMath.dotProd(diff, p0.m_Velocity)});
+    }
+
+
+    @Override
+    ConstraintDerivative getCd0(){
+        Particle p0 = pVector.get(0);
+        double[] diff = VectorMath.subtract(p0.m_Position, center);
+        return new ConstraintDerivative(new int[]{p0.id},
+                new double[][]{VectorMath.scale(diff, 2)});
+    }
+
+    @Override
+    ConstraintDerivative getCd0dt(){
+        Particle p0 = pVector.get(0);
+        double[] vdiff = p0.m_Velocity;
+        return new ConstraintDerivative(new int[]{p0.id},
+                new double[][]{VectorMath.scale(vdiff, 2)});
     }
 }
