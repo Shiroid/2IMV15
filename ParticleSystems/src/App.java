@@ -4,6 +4,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Vector;
 
+import org.apache.commons.math3.linear.*;
+
 import javax.swing.JFrame;
 
 public class App implements KeyListener, MouseListener
@@ -144,6 +146,14 @@ public class App implements KeyListener, MouseListener
 	
 	public static void main(String[] args) throws InterruptedException
 	{
+		/*ConjugateGradient cg = new ConjugateGradient(100, 0.0000000001, false);
+		//OpenMapRealMatrix m = new OpenMapRealMatrix(new double[][]{{1,2},{3,4}});
+		OpenMapRealMatrix m = new OpenMapRealMatrix(5, 5);
+		//ArrayRealVector b = new ArrayRealVector(new double[]{7,15});
+		//RealVector x = cg.solve(m, b);
+		System.out.println(m.toString());*/
+
+
 		// Instructions
 		System.out.println("\n\nHow to use this application:\n\n");
 		System.out.println("\t Toggle construction/simulation display with the spacebar key\n");

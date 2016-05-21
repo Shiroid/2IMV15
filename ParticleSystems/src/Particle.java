@@ -5,6 +5,7 @@ public class Particle
 	public double[] m_Velocity;
 	public double[] m_Force;
 	public double mass;
+	public int id;
 
 	public Particle(double x, double y)
 	{
@@ -24,6 +25,11 @@ public class Particle
 		mass = m;
 	}
 
+	public void setID(int i)
+	{
+		this.id = i;
+	}
+
 	public void reset()
 	{
 		m_Position = m_ConstructPos.clone();
@@ -37,11 +43,16 @@ public class Particle
 
 	public void applyForce(double dt)
 	{
-		m_Velocity = VectorMath.add(m_Velocity, VectorMath.scale(m_Force, dt*mass));
+		m_Velocity = VectorMath.add(m_Velocity, VectorMath.scale(m_Force, dt/mass));
 	}
 
 	public void applyVelocity(double dt)
 	{
 		m_Position = VectorMath.add(m_Position, VectorMath.scale(m_Velocity, dt));
+	}
+
+	public double[] getAccel()
+	{
+		return VectorMath.scale(m_Force, 1/mass);
 	}
 }
