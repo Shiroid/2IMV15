@@ -41,12 +41,12 @@ public class Particle
 		m_Force = new double[] {0, 0};
 	}
 
-	public void applyForce(double dt)
+	public void updateVelocity(double dt)
 	{
 		m_Velocity = VectorMath.add(m_Velocity, VectorMath.scale(m_Force, dt/mass));
 	}
 
-	public void applyVelocity(double dt)
+	public void updatePosition(double dt)
 	{
 		m_Position = VectorMath.add(m_Position, VectorMath.scale(m_Velocity, dt));
 	}

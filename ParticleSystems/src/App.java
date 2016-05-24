@@ -96,22 +96,29 @@ public class App implements KeyListener, MouseListener
 	{
 		if (dsim)
 		{
-			// TODO: Do simulation step
+			// Step 1: Clear forces 
 			for (int i = 0; i < pVector.size(); i++)
 			{
 				pVector.get(i).clearForce();
 			}
-			//Add forces to particles
+			// Step 2: Calculate forces
 			for (int i = 0; i < fVector.size(); i++)
 			{
 				fVector.get(i).apply();
 			}
-			//Apply forces and resulting velocity
+			// Step 3: Calculate constraint forces (correction step)
+			// q, Q, M, W, C, lambda
+			for (int i = 0; i < cVector.size(); i++)
+			{
+				
+			}
+			
+			// Step 4: Calculate the derivative (update step, explicit Euler)
 			for (int i = 0; i < pVector.size(); i++)
 			{
 				Particle p = pVector.get(i);
-				p.applyForce(dt);
-				p.applyVelocity(dt);
+				p.updateVelocity(dt);
+				p.updatePosition(dt);
 			}
 		}
 		else
@@ -174,8 +181,8 @@ public class App implements KeyListener, MouseListener
 		//ArrayRealVector b = new ArrayRealVector(new double[]{7,15});
 		//RealVector x = cg.solve(m, b);
 		System.out.println(m.toString());*/
-
-
+		
+		
 		// Instructions
 		System.out.println("\n\nHow to use this application:\n\n");
 		System.out.println("\t Toggle construction/simulation display with the spacebar key\n");

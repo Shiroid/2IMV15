@@ -23,7 +23,7 @@ public class CircularWireConstraint extends Constraint {
         Particle p0 = pVector.get(0);
         double[] diff = VectorMath.subtract(p0.m_Position, center);
         return new ConstraintValue(new int[]{p0.id},
-                new double[]{(VectorMath.dotProd(diff, diff) - r)});
+                new double[]{(VectorMath.dotProd(diff, diff) - r*r)/2});
     }
 
     @Override
@@ -33,7 +33,6 @@ public class CircularWireConstraint extends Constraint {
         return new ConstraintValue(new int[]{p0.id},
                 new double[]{VectorMath.dotProd(diff, p0.m_Velocity)});
     }
-
 
     @Override
     ConstraintDerivative getCd0(){
