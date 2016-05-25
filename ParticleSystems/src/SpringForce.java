@@ -13,6 +13,7 @@ public class SpringForce extends Force {
         this.ks = ks;
         this.kd = kd;
         this.r = r;
+        this.isOn = true;
     }
 
     public SpringForce(Particle p1, Particle p2, double ks, double kd, double r){
@@ -23,6 +24,7 @@ public class SpringForce extends Force {
         this.ks = ks;
         this.kd = kd;
         this.r = r;
+        this.isOn = true;
     }
 
 
@@ -30,6 +32,12 @@ public class SpringForce extends Force {
     void setParticles(Vector<Particle> pVector){
         assert (pVector.size() == 2);
         this.pVector = pVector;
+    }
+
+
+    @Override
+    void setTether(double[] center){
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -9,11 +9,18 @@ public class DirectionalForce extends Force {
     public DirectionalForce(Vector<Particle> pVector, double[] vec){
         this.setParticles(pVector);
         this.vec = vec;
+        this.isOn = true;
     }
 
     @Override
     void setParticles(Vector<Particle> pVector){
         this.pVector = pVector;
+    }
+
+
+    @Override
+    void setTether(double[] center){
+        throw new UnsupportedOperationException();
     }
 
     @Override

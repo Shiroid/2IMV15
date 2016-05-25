@@ -5,8 +5,15 @@ import java.util.Vector;
  */
 public abstract class Force {
     protected Vector<Particle> pVector;
+    protected boolean isOn;
 
     abstract void setParticles(Vector<Particle> pVector);
+
+    abstract void setTether(double[] center);
+
+    public void setOn(boolean on){
+        this.isOn = on;
+    }
 
     abstract void apply();
 }

@@ -1,14 +1,11 @@
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.util.Vector;
 
 import org.apache.commons.math3.linear.*;
 
 import javax.swing.JFrame;
 
-public class App implements KeyListener, MouseListener
+public class App implements KeyListener, MouseListener, MouseMotionListener
 {
 	// Simulation constants
 	static int N = 64;
@@ -24,6 +21,8 @@ public class App implements KeyListener, MouseListener
 	Vector<Constraint> cVector;
 	
 	MainFrame frame;
+
+	private int mouseSpringIndex;
 	
 	public App()
 	{
@@ -54,6 +53,13 @@ public class App implements KeyListener, MouseListener
 
 		// TODO: Add constraints
 		addForce(new DirectionalForce(pVector, new double[]{0, 0.0001}));//Gravity
+
+		// Add mouse spring
+		Vector<Particle> m = new Vector<Particle>();
+		m.add(pVector.get(0));
+		addForce(new TetheredSpringForce(m, 0.1, 0.1, 0.0));
+		mouseSpringIndex = fVector.size()-1;
+
 		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.01, 0.1, 0.3));
 	}
 	
@@ -69,6 +75,7 @@ public class App implements KeyListener, MouseListener
 		// Set listeners
 		frame.addKeyListener(this);
 		frame.addMouseListener(this);
+		frame.addMouseMotionListener(this);
 	}
 
 	public void addParticle(Particle p){
@@ -168,10 +175,40 @@ public class App implements KeyListener, MouseListener
 	public void keyReleased(KeyEvent e) {}
 	
 	public void mouseClicked(MouseEvent e) {}
-	public void mousePressed(MouseEvent e) {}
-	public void mouseReleased(MouseEvent e) {}
+	public void mousePressed(MouseEvent e) {
+		Force f = fVector.get(mouseSpringIndex);
+		double[] mousePos = new double[]{e.getX(), e.getY()};
+		mousePos = frame.adjustMousePos(mousePos);
+		Particle clickedParticle = null;
+		for (Particle p: pVector){
+			double[] diff = VectorMath.subtract(p.m_Position, mousePos);
+			double dist = diff[0]*diff[0]+diff[1]*diff[1];
+			if(dist < 0.04*0.04){
+				clickedParticle = p;
+			}
+		}
+		if(clickedParticle != null){
+			Vector<Particle> vec = new Vector<Particle>();
+			vec.add(clickedParticle);
+			f.setParticles(vec);
+			f.setTether(mousePos);
+			f.setOn(true);
+		}
+	}
+	public void mouseReleased(MouseEvent e) {
+		Force f = fVector.get(mouseSpringIndex);
+		f.setOn(false);
+	}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
+	public void mouseDragged(MouseEvent e) {
+		Force f = fVector.get(mouseSpringIndex);
+		double[] mousePos = new double[]{e.getX(), e.getY()};
+		mousePos = frame.adjustMousePos(mousePos);
+
+		f.setTether(mousePos);
+	}
+	public void mouseMoved(MouseEvent e) {}
 	
 	public static void main(String[] args) throws InterruptedException
 	{
