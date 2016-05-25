@@ -42,8 +42,8 @@ public class RodConstraint extends Constraint{
         Particle p0 = pVector.get(0);
         Particle p1 = pVector.get(1);
         double[] diff = VectorMath.subtract(p0.m_Position, p1.m_Position);
-        return new ConstraintDerivative(new int[]{p0.id},
-                new double[][]{VectorMath.scale(diff, 2)});
+        return new ConstraintDerivative(new int[]{p0.id, p1.id},
+                new double[][]{VectorMath.scale(diff, 2), VectorMath.minus(VectorMath.scale(diff, 2))});
     }
 
     @Override
@@ -51,7 +51,7 @@ public class RodConstraint extends Constraint{
         Particle p0 = pVector.get(0);
         Particle p1 = pVector.get(1);
         double[] vdiff = p0.m_Velocity;
-        return new ConstraintDerivative(new int[]{p0.id},
-                new double[][]{VectorMath.scale(vdiff, 2)});
+        return new ConstraintDerivative(new int[]{p0.id, p1.id},
+                new double[][]{VectorMath.scale(vdiff, 2), VectorMath.minus(VectorMath.scale(vdiff, 2))});
     }
 }
