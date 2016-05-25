@@ -4,8 +4,8 @@ import java.util.Vector;
  * Created by leo on 20-5-16.
  */
 public class CircularWireConstraint extends Constraint {
-    private double[] center;
     private double r;
+    private double[] center;
 
     public CircularWireConstraint(Vector<Particle> pVector, double[] center, double r){
         setParticles(pVector);
@@ -48,5 +48,14 @@ public class CircularWireConstraint extends Constraint {
         double[] vdiff = p0.m_Velocity;
         return new ConstraintDerivative(new int[]{p0.id},
                 new double[][]{VectorMath.scale(vdiff, 2)});
+    }
+
+    @Override
+    public double[][] getRecipe(){
+        double[][] recipe = new double[3][];
+        recipe[0] = new double[]{1}; //Drawing style
+        recipe[1] = center;
+        recipe[2] = new double[]{r};
+        return recipe;
     }
 }

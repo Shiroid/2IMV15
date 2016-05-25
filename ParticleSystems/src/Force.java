@@ -16,4 +16,6 @@ public abstract class Force {
     }
 
     abstract void apply();
+
+    abstract public double[][] getRecipe();
 }

@@ -54,4 +54,13 @@ public class SpringForce extends Force {
         pVector.get(0).m_Force = VectorMath.subtract(pVector.get(0).m_Force, vec);
         pVector.get(1).m_Force = VectorMath.add(pVector.get(1).m_Force, vec);
     }
+
+    @Override
+    public double[][] getRecipe(){
+        double[][] recipe = new double[3][];
+        recipe[0] = new double[]{2};//Drawing Style
+        recipe[1] = pVector.get(0).m_Position;
+        recipe[2] = pVector.get(1).m_Position;
+        return recipe;
+    }
 }

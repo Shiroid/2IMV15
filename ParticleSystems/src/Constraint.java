@@ -25,4 +25,7 @@ public abstract class Constraint {
     void setID(int i){
         this.id = i;
     }
+
+
+    abstract public double[][] getRecipe();
 }

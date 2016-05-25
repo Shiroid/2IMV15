@@ -43,4 +43,19 @@ public class TetheredSpringForce extends SpringForce{
             pVector.get(0).m_Force = VectorMath.subtract(pVector.get(0).m_Force, vec);
         }
     }
+
+    @Override
+    public double[][] getRecipe(){
+        if(isOn){
+            double[][] recipe = new double[3][];
+            recipe[0] = new double[]{2};//Drawing Style
+            recipe[1] = center;
+            recipe[2] = pVector.get(0).m_Position;
+            return recipe;
+        } else {
+            double[][] recipe = new double[1][];
+            recipe[0] = new double[]{0};//Drawing Style
+            return recipe;
+        }
+    }
 }

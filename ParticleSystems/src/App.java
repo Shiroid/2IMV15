@@ -138,6 +138,9 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	{
 		// Draw forces, constraints & particles
 		frame.drawParticles(pVector);
+		frame.drawForces(fVector);
+		frame.drawConstraints(cVector);
+		frame.paintSystem();
 	}
 	
 	public void resetGUI()

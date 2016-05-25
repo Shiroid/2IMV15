@@ -54,4 +54,13 @@ public class RodConstraint extends Constraint{
         return new ConstraintDerivative(new int[]{p0.id, p1.id},
                 new double[][]{VectorMath.scale(vdiff, 2), VectorMath.minus(VectorMath.scale(vdiff, 2))});
     }
+
+    @Override
+    public double[][] getRecipe(){
+        double[][] recipe = new double[3][];
+        recipe[0] = new double[]{2};//Drawing style
+        recipe[1] = pVector.get(0).m_Position;
+        recipe[2] = pVector.get(1).m_Position;
+        return recipe;
+    }
 }

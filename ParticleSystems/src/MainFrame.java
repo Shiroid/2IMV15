@@ -1,5 +1,8 @@
+import javafx.scene.shape.Circle;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Vector;
 
@@ -29,23 +32,49 @@ public class MainFrame extends JFrame
 	public int heightRef(){
 		return this.getHeight();
 	}
-	
+
 	public void drawParticles(Vector<Particle> particles)
 	{
 		panel.setParticles(particles);
 	}
+
+	public void drawForces(Vector<Force> forces)
+	{
+		panel.setForces(forces);
+	}
+
+	public void drawConstraints(Vector<Constraint> constraints)
+	{
+		panel.setConstraints(constraints);
+	}
+
+	public void paintSystem(){ panel.paintSystem(); }
 	
 	class MainPanel extends JPanel
 	{
 		private Vector<Particle> particles;
+		private Vector<Force> forces;
+		private Vector<Constraint> constraints;
 
 		private double pSize = 0.03;
-		
+
 		public void setParticles(Vector<Particle> parts)
 		{
 			particles = parts;
-			this.repaint();
+			//this.repaint();
 		}
+
+		public void setForces(Vector<Force> parts)
+		{
+			forces = parts;
+		}
+
+		public void setConstraints(Vector<Constraint> parts)
+		{
+			constraints = parts;
+		}
+
+		public void paintSystem(){ this. repaint(); }
 
 		public void paintComponent(Graphics g)
 		{
@@ -53,6 +82,8 @@ public class MainFrame extends JFrame
 			Graphics2D g2 = (Graphics2D) g;
 
 			paintParticles(g2);
+			paintForces(g2);
+			paintConstraints(g2);
 		}
 
 		public void paintParticles(Graphics2D g2)
@@ -67,6 +98,51 @@ public class MainFrame extends JFrame
 						scale(pSize, true), scale(pSize, false));
 
 				g2.fill(rect);
+			}
+		}
+
+		public void paintForces(Graphics2D g2)
+		{
+
+			for (int i = 0; i < forces.size(); i++)
+			{
+				double[][] recipe = forces.get(i).getRecipe();
+				paintFC(g2, recipe);
+			}
+		}
+
+		public void paintConstraints(Graphics2D g2)
+		{
+
+			for (int i = 0; i < constraints.size(); i++)
+			{
+				double[][] recipe = constraints.get(i).getRecipe();
+				paintFC(g2, recipe);
+			}
+		}
+
+		public void paintFC(Graphics2D g2, double[][] recipe){
+
+			int diffX = widthRef()-this.getWidth();
+			int diffY = heightRef()-this.getHeight();
+			if(recipe[0][0] == 1){
+				// Draw circle
+				g2.drawOval(
+						(int) centerAndScale(recipe[1][0] - recipe[2][0], true) - diffX,
+						(int) centerAndScale(recipe[1][1] - recipe[2][0], false) - diffY,
+						(int) scale(2*recipe[2][0], true),
+						(int) scale(2*recipe[2][0], false)
+						);
+			}
+			if(recipe[0][0] == 2){
+				// Draw line
+				Line2D line = new Line2D.Double(
+						centerAndScale(recipe[1][0], true) - diffX,
+						centerAndScale(recipe[1][1], false) - diffY,
+						centerAndScale(recipe[2][0], true) - diffX,
+						centerAndScale(recipe[2][1], false) - diffY
+				);
+				g2.draw(line);
 			}
 		}
 

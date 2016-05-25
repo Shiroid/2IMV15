@@ -30,4 +30,11 @@ public class DirectionalForce extends Force {
             pVector.get(i).m_Force = VectorMath.add(pVector.get(i).m_Force, vec);
         }
     }
+
+    @Override
+    public double[][] getRecipe(){
+        double[][] recipe = new double[3][];
+        recipe[0] = new double[]{0};//Drawing Style
+        return recipe;
+    }
 }
