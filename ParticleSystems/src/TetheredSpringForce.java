@@ -14,7 +14,7 @@ public class TetheredSpringForce extends SpringForce{
 
     public TetheredSpringForce(Vector<Particle> pVector, double ks, double kd, double r){
         super(pVector, ks, kd, r);
-        this.center = new double[]{0,0};
+        this.center = pVector.get(0).m_ConstructPos;
         this.isOn = false;
     }
 
@@ -36,7 +36,7 @@ public class TetheredSpringForce extends SpringForce{
         if(isOn){
             double[] l0 = VectorMath.subtract(pVector.get(0).m_Position, center);
             double[] l1 = VectorMath.subtract(pVector.get(0).m_Velocity, new double[]{0, 0});
-            double l0l = Math.sqrt(VectorMath.dotProd(l0, l0));
+            double l0l = Math.sqrt(VectorMath.dotProd(l0, l0))+Double.MIN_VALUE;
             double scalar = (ks*(l0l - r) + kd*(VectorMath.dotProd(l1, l0)/l0l))/l0l;
             double[] vec = VectorMath.scale(l0, scalar);
 
