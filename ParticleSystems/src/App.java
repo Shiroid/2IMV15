@@ -13,7 +13,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	static double d = 5;
 	
 	// Simulation variables
-	boolean dsim, dump_frames;
+	boolean dsim, dump_frames, dfor, dcon;
 	int frame_number;
 
 	Vector<Particle> pVector;
@@ -31,6 +31,8 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	public App()
 	{
 		dsim = false;
+		dfor = true;
+		dcon = true;
 		dump_frames = false;
 		frame_number = 0;
 	}
@@ -69,7 +71,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		mouseRepulsorIndex = fVector.size()-1;
 
 		// Add cloth
-		addCloth(12, 12, 0.05, -0.5, -0.5, 0.1, 0.5, true);
+		addCloth(15, 15, 0.05, -0.8, -0.3, 0.1, 0.5, true);
 		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.5, true);
 
 		// Additional forces
@@ -196,9 +198,11 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				pVector.get(i).clearForce();
 			}
 			// Step 2: Calculate forces
-			for (int i = 0; i < fVector.size(); i++)
-			{
-				fVector.get(i).apply();
+			if(dfor){
+				for (int i = 0; i < fVector.size(); i++)
+				{
+					fVector.get(i).apply();
+				}
 			}
 			// Step 3: Calculate constraint forces (correction step)
 			// q, Q, M, W, C, lambda
@@ -225,8 +229,8 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	{
 		// Draw forces, constraints & particles
 		frame.drawParticles(pVector);
-		frame.drawForces(fVector);
-		frame.drawConstraints(cVector);
+		if(dfor) frame.drawForces(fVector);
+		if(dcon) frame.drawConstraints(cVector);
 		frame.paintSystem();
 	}
 	
@@ -257,6 +261,12 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				break;
 			case KeyEvent.VK_SPACE:
 				dsim = !dsim;
+				break;
+			case KeyEvent.VK_F:
+				dfor = !dfor;
+				break;
+			case KeyEvent.VK_G:
+				dcon = !dcon;
 				break;
 			case KeyEvent.VK_R:
 				fVector.get(mouseRepulsorIndex).setOn(true);
@@ -330,6 +340,8 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		System.out.println("\n\nHow to use this application:\n\n");
 		System.out.println("\t Toggle construction/simulation display with the spacebar key\n");
 		System.out.println("\t Dump frames by pressing the 'd' key\n");
+		System.out.println("\t Toggle forces by pressing the 'f' key\n");
+		System.out.println("\t Toggle constraints by pressing the 'g' key\n");
 		System.out.println("\t Repel particles from cursor by pressing the 'r' key\n");
 		System.out.println("\t Quit by pressing the 'q' key\n");
 		
