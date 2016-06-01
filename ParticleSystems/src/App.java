@@ -72,10 +72,12 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 
 		// Add cloth
 		addCloth(15, 15, 0.05, -0.8, -0.3, 0.1, 0.5, true);
-		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.5, true);
+		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.9, true);
 
 		// Additional forces
-		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.01, 0.1, 0.3));
+		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.5, 0.5, 0.3));
+		addForce(new SpringForce(pVector.get(1), pVector.get(2), 0.5, 0.5, 0.3));
+		addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 180));
 	}
 
 	public void addCloth(int wi, int hi, double di, double bXi, double bYi, double ksi, double kdi, boolean dti){
@@ -133,7 +135,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				}
 			}
 		}
-		if(doTether) {
+		if(dti) {
 			Vector<Particle> p1 = new Vector<Particle>();
 			p1.add(pVector.get(pOffset));
 			TetheredSpringForce t1 = new TetheredSpringForce(
