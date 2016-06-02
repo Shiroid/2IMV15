@@ -19,6 +19,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	Vector<Particle> pVector;
 	Vector<Force> fVector;
 	Vector<Constraint> cVector;
+	Vector<Solid> sVector;
 	
 	MainFrame frame;
 
@@ -52,6 +53,13 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		pVector = new Vector<Particle>();
 		fVector = new Vector<Force>();
 		cVector = new Vector<Constraint>();
+		sVector = new Vector<Solid>();
+
+		// Set boundaries
+		addSolid(new Boundary(pVector, new double[]{1,0}, new double[]{-1,0}, 0.5, 0.02));
+		addSolid(new Boundary(pVector, new double[]{-1,0}, new double[]{1,0}, 0.5, 0.02));
+		addSolid(new Boundary(pVector, new double[]{0,1}, new double[]{0,-1}, 0.5, 0.02));
+		addSolid(new Boundary(pVector, new double[]{0,-1}, new double[]{0,1}, 0.5, 0.02));
 		
 		addParticle(new Particle(center[0] + offset[0], center[1] + offset[1]));
 		addParticle(new Particle(center[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1]));
@@ -77,7 +85,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		// Additional forces
 		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.5, 0.5, 0.3));
 		addForce(new SpringForce(pVector.get(1), pVector.get(2), 0.5, 0.5, 0.3));
-		addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 180));
+		addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 90));
 	}
 
 	public void addCloth(int wi, int hi, double di, double bXi, double bYi, double ksi, double kdi, boolean dti){
@@ -91,7 +99,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		double baseY = bYi;// Y position of upper corner
 		double ks = ksi;// Cloth spring strength
 		double kd = kdi;// Cloth spring damping
-		boolean doTether = true;// Tether the cloth's upper corners
+		boolean doTether = dti;// Tether the cloth's upper corners
 		for (int i = 0; i < w; i++){
 			for (int j = 0; j < h; j++){
 				addParticle(new Particle(baseX + i*d, baseY + j*d));
@@ -135,7 +143,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				}
 			}
 		}
-		if(dti) {
+		if(doTether) {
 			Vector<Particle> p1 = new Vector<Particle>();
 			p1.add(pVector.get(pOffset));
 			TetheredSpringForce t1 = new TetheredSpringForce(
@@ -176,7 +184,6 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	}
 
 	public void addForce(Force f){
-		int id = fVector.size();
 		fVector.add(f);
 	}
 
@@ -184,6 +191,10 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		int id = cVector.size();
 		cVector.add(c);
 		c.setID(id);
+	}
+
+	public void addSolid(Solid s){
+		sVector.add(s);
 	}
 	
 	/***
@@ -194,6 +205,11 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	{
 		if (dsim)
 		{
+			// Step 0: Check collissions
+			for (int i = 0; i < sVector.size(); i++)
+			{
+				sVector.get(i).apply();
+			}
 			// Step 1: Clear forces 
 			for (int i = 0; i < pVector.size(); i++)
 			{
