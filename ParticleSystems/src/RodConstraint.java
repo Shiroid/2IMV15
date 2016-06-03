@@ -6,7 +6,16 @@ import java.util.Vector;
 public class RodConstraint extends Constraint{
     private double r;
 
-    public RodConstraint(Vector<Particle> pVector, double[] center, double r){
+    public RodConstraint(Vector<Particle> pVector, double r){
+        setParticles(pVector);
+        this.r = r;
+    }
+
+    public RodConstraint(Particle p1, Particle p2, double r){
+        Vector<Particle> pVec = new Vector<Particle>();
+        pVec.add(p1);
+        pVec.add(p2);
+        this.setParticles(pVec);
         setParticles(pVector);
         this.r = r;
     }
@@ -17,24 +26,20 @@ public class RodConstraint extends Constraint{
     }
 
     @Override
-    ConstraintValue getC0(){
+    double getC0(){
         Particle p0 = pVector.get(0);
         Particle p1 = pVector.get(1);
         double[] diff = VectorMath.subtract(p0.m_Position, p1.m_Position);
-        double result = (VectorMath.dotProd(diff, diff) - r*r)/2;
-        return new ConstraintValue(new int[]{p0.id, p1.id},
-                new double[]{result, result});
+        return VectorMath.dotProd(diff, diff) - r*r;
     }
 
     @Override
-    ConstraintValue getC1(){
+    double getC1(){
         Particle p0 = pVector.get(0);
         Particle p1 = pVector.get(1);
         double[] diff = VectorMath.subtract(p0.m_Position, p1.m_Position);
         double[] diffV = VectorMath.subtract(p0.m_Velocity, p1.m_Velocity);
-        return new ConstraintValue(new int[]{p0.id, p1.id},
-                new double[]{VectorMath.dotProd(diff, diffV),
-                        VectorMath.dotProd(VectorMath.minus(diff), VectorMath.minus(diffV))});
+        return 2*VectorMath.dotProd(diff, diffV);
     }
 
     @Override

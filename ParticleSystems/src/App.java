@@ -1,6 +1,7 @@
 import java.awt.event.*;
 import java.util.Vector;
 
+import jdk.nashorn.internal.scripts.JD;
 import org.apache.commons.math3.linear.*;
 
 import javax.swing.JFrame;
@@ -14,7 +15,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	
 	// Simulation variables
 	boolean dsim, dump_frames, dfor, dcon;
-	int frame_number;
+	int frame_number, integration_type;
 
 	Vector<Particle> pVector;
 	Vector<Force> fVector;
@@ -28,6 +29,12 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 
 	private double tetherStrength = 0.5;
 	private double tetherDamping = 0.5;
+
+	private double boundEps = 0.02;
+	private double boundBounce = 0.5;
+
+	private double constraintKs = 0.01;
+	private double constraintKd = 0.01;
 	
 	public App()
 	{
@@ -56,10 +63,10 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		sVector = new Vector<Solid>();
 
 		// Set boundaries
-		addSolid(new Boundary(pVector, new double[]{1,0}, new double[]{-1,0}, 0.5, 0.02));
-		addSolid(new Boundary(pVector, new double[]{-1,0}, new double[]{1,0}, 0.5, 0.02));
-		addSolid(new Boundary(pVector, new double[]{0,1}, new double[]{0,-1}, 0.5, 0.02));
-		addSolid(new Boundary(pVector, new double[]{0,-1}, new double[]{0,1}, 0.5, 0.02));
+		addSolid(new Boundary(pVector, new double[]{1,0}, new double[]{-1,0}, boundBounce, boundEps));
+		addSolid(new Boundary(pVector, new double[]{-1,0}, new double[]{1,0}, boundBounce, boundEps));
+		addSolid(new Boundary(pVector, new double[]{0,1}, new double[]{0,-1}, boundBounce, boundEps));
+		addSolid(new Boundary(pVector, new double[]{0,-1}, new double[]{0,1}, boundBounce, boundEps));
 		
 		addParticle(new Particle(center[0] + offset[0], center[1] + offset[1]));
 		addParticle(new Particle(center[0] + offset[0] + offset[0], center[1] + offset[1] + offset[1]));
@@ -82,9 +89,11 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		addCloth(15, 15, 0.05, -0.8, -0.3, 0.1, 0.5, true);
 		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.9, true);
 
-		// Additional forces
+		// Constraints for spring
+		addConstraint(new CircularWireConstraint(pVector.get(0), new double[]{center[0]+offset[0], center[1]+offset[1]-offset[0]}, offset[0]));
 		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.5, 0.5, 0.3));
 		addForce(new SpringForce(pVector.get(1), pVector.get(2), 0.5, 0.5, 0.3));
+		// Angular spring
 		addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 90));
 	}
 
@@ -201,45 +210,208 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	 * Render functions
 	 */
 	
-	public void updateParticles()
+	public void updateParticles(double delT)
 	{
+		// Step 0: Check collissions
+		for (int i = 0; i < sVector.size(); i++)
+		{
+			sVector.get(i).apply();
+		}
+		// Step 1: Clear forces
+		for (int i = 0; i < pVector.size(); i++)
+		{
+			pVector.get(i).clearForce();
+		}
+		// Step 2: Calculate forces
+		if(dfor){
+			for (int i = 0; i < fVector.size(); i++)
+			{
+				fVector.get(i).apply();
+			}
+		}
+
+		// Step 3: Calculate constraint forces (correction step)
+		// q, Q, M, W, C, lambda
+		// JWJ* lambda = -J.q. -JWQ -ksC - kdC.
+		// Q^ = J* lambda
+		if(dcon) {
+			try {
+				int gpVecLen = pVector.size() * VectorMath.VECSIZE;
+				int gcVecLen = cVector.size();
+				OpenMapRealMatrix W = new OpenMapRealMatrix(gpVecLen, gpVecLen);
+				OpenMapRealMatrix J = new OpenMapRealMatrix(gcVecLen, gpVecLen);
+				OpenMapRealMatrix Jdot = new OpenMapRealMatrix(gcVecLen, gpVecLen);
+				OpenMapRealMatrix JT = new OpenMapRealMatrix(gpVecLen, gcVecLen);
+				ArrayRealVector CScaled = new ArrayRealVector(gcVecLen); // scaled by -ks
+				ArrayRealVector CdotScaled = new ArrayRealVector(gcVecLen); // scaled by -kd
+				ArrayRealVector qdot = new ArrayRealVector(gpVecLen);
+				ArrayRealVector Q = new ArrayRealVector(gpVecLen);
+
+				for (int i = 0; i < pVector.size(); i++) {
+					Particle p = pVector.get(i);
+					for (int k = 0; k < VectorMath.VECSIZE; k++) {
+						W.setEntry(VectorMath.VECSIZE * i + k, VectorMath.VECSIZE * i + k, 1 / p.mass);
+						Q.setEntry(VectorMath.VECSIZE * i + k, p.m_Force[k]);
+						qdot.setEntry(VectorMath.VECSIZE * i + k, p.m_Velocity[k]);
+					}
+				}
+
+				for (int i = 0; i < cVector.size(); i++) {
+					Constraint c = cVector.get(i);
+					CScaled.setEntry(i, -constraintKs * c.getC0());
+					CdotScaled.setEntry(i, -constraintKd * c.getC1());
+					ConstraintDerivative cd0 = c.getCd0();
+					for (int j = 0; j < cd0.particles.length; j++) {
+						J.setEntry(i, VectorMath.VECSIZE * cd0.particles[j], cd0.values[j][0]);
+						J.setEntry(i, VectorMath.VECSIZE * cd0.particles[j] + 1, cd0.values[j][1]);
+						JT.setEntry(VectorMath.VECSIZE * cd0.particles[j], i, cd0.values[j][0]);
+						JT.setEntry(VectorMath.VECSIZE * cd0.particles[j] + 1, i, cd0.values[j][1]);
+					}
+					ConstraintDerivative cd0dt = c.getCd0dt();
+					for (int j = 0; j < cd0dt.particles.length; j++) {
+						Jdot.setEntry(i, VectorMath.VECSIZE * cd0dt.particles[j], cd0dt.values[j][0]);
+						Jdot.setEntry(i, VectorMath.VECSIZE * cd0dt.particles[j] + 1, cd0dt.values[j][1]);
+					}
+				}
+				// JWJ* lambda = -J.q. -JWQ -ksC - kdC.
+				OpenMapRealMatrix lhs = J.multiply(W).multiply(JT);
+				RealVector rhs = CScaled.add(CdotScaled).subtract(Jdot.operate(qdot)).subtract(J.multiply(W).operate(Q));
+				ConjugateGradient cg = new ConjugateGradient(gcVecLen + 10, 0.000001, false);
+				RealVector lambda = cg.solve(lhs, rhs);
+
+				// Q^ = J* lambda
+				RealVector Qhat = JT.operate(lambda);
+				for (int i = 0; i < pVector.size(); i++) {
+					Particle p = pVector.get(i);
+					p.m_Force[0] += Qhat.getEntry(VectorMath.VECSIZE * i);
+					p.m_Force[1] += Qhat.getEntry(VectorMath.VECSIZE * i + 1);
+				}
+			} catch (Exception e){
+				dsim = !dsim;
+				dcon = true;
+				System.out.println("Aborted constraint solver.");
+			}
+		}
+
+		// Step 4: Calculate the derivative (update step, explicit Euler)
+		for (int i = 0; i < pVector.size(); i++)
+		{
+			Particle p = pVector.get(i);
+			p.updateVelocity(delT);
+			p.updatePosition(delT);
+		}
+	}
+
+	public void performUpdate(){
 		if (dsim)
 		{
-			// Step 0: Check collissions
-			for (int i = 0; i < sVector.size(); i++)
-			{
-				sVector.get(i).apply();
-			}
-			// Step 1: Clear forces 
-			for (int i = 0; i < pVector.size(); i++)
-			{
-				pVector.get(i).clearForce();
-			}
-			// Step 2: Calculate forces
-			if(dfor){
-				for (int i = 0; i < fVector.size(); i++)
-				{
-					fVector.get(i).apply();
-				}
-			}
-			// Step 3: Calculate constraint forces (correction step)
-			// q, Q, M, W, C, lambda
-			for (int i = 0; i < cVector.size(); i++)
-			{
-				
-			}
-			
-			// Step 4: Calculate the derivative (update step, explicit Euler)
-			for (int i = 0; i < pVector.size(); i++)
-			{
-				Particle p = pVector.get(i);
-				p.updateVelocity(dt);
-				p.updatePosition(dt);
+			switch (integration_type){
+				case 1:
+					// Do midpoint
+					double[][] base = getState();
+					updateParticles(dt);
+					double[][] eul = getState();
+					setState(base);
+					double[][] eulDiff = getStateDiff(eul);
+					addStateDiff(eulDiff, 1.0/2);
+
+					double[][] mid = getState();
+					updateParticles(dt);
+					double[][] postmid = getState();
+					setState(mid);
+					double[][] midDiff = getStateDiff(postmid);
+					setState(base);
+					addStateDiff(midDiff, 1.0);
+					break;
+				case 2:
+					// Do Runge-Kutta
+					double[][] s1b = getState();
+					updateParticles(dt);
+					double[][] s1 = getState();
+					setState(s1b);
+					double[][] k1 = getStateDiff(s1);
+
+					addStateDiff(k1, 1.0/2);
+					double[][] s2b = getState();
+					updateParticles(dt);
+					double[][] s2 = getState();
+					setState(s2b);
+					double[][] k2 = getStateDiff(s2);
+
+					setState(s1b);
+					addStateDiff(k2, 1.0/2);
+					double[][] s3b = getState();
+					updateParticles(dt);
+					double[][] s3 = getState();
+					setState(s3b);
+					double[][] k3 = getStateDiff(s3);
+
+					setState(s1b);
+					addStateDiff(k3, 1.0);
+					double[][] s4b = getState();
+					updateParticles(dt);
+					double[][] s4 = getState();
+					setState(s4b);
+					double[][] k4 = getStateDiff(s4);
+
+					setState(s1b);
+					addStateDiff(k1, 1.0/6);
+					addStateDiff(k2, 1.0/3);
+					addStateDiff(k3, 1.0/3);
+					addStateDiff(k4, 1.0/6);
+					break;
+				default:
+					// Do Euler
+					updateParticles(dt);
 			}
 		}
 		else
 		{
 			resetGUI();
+		}
+	}
+
+	public double[][] getState(){
+		double[][] k = new double[pVector.size()][4];
+		for (int i = 0; i < pVector.size(); i++){
+			Particle p = pVector.get(i);
+			k[i][0] = p.m_Position[0];
+			k[i][1] = p.m_Position[1];
+			k[i][2] = p.m_Velocity[0];
+			k[i][3] = p.m_Velocity[1];
+		}
+		return k;
+	}
+
+	public double[][] getStateDiff(double[][] knew){
+		double[][] res = new double[pVector.size()][4];
+		for (int i = 0; i < pVector.size(); i++){
+			Particle p = pVector.get(i);
+			res[i][0] = knew[i][0] - p.m_Position[0];
+			res[i][1] = knew[i][1] - p.m_Position[1];
+			res[i][2] = knew[i][2] - p.m_Velocity[0];
+			res[i][3] = knew[i][3] - p.m_Velocity[1];
+		}
+		return res;
+	}
+
+	public void setState(double[][] k){
+		for (int i = 0; i < pVector.size(); i++){
+			Particle p = pVector.get(i);
+			p.m_Position[0] = k[i][0];
+			p.m_Position[1] = k[i][1];
+			p.m_Velocity[0] = k[i][2];
+			p.m_Velocity[1] = k[i][3];
+		}
+	}
+
+	public void addStateDiff(double[][] k, double fraction){
+		for (int i = 0; i < pVector.size(); i++){
+			Particle p = pVector.get(i);
+			p.m_Position[0] += fraction*k[i][0];
+			p.m_Position[1] += fraction*k[i][1];
+			p.m_Velocity[0] += fraction*k[i][2];
+			p.m_Velocity[1] += fraction*k[i][3];
 		}
 	}
 	
@@ -270,6 +442,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		switch (e.getKeyCode())
 		{
 			case KeyEvent.VK_C:
+				dcon = !dcon;
 				break;
 			case KeyEvent.VK_D:
 				dump_frames = !dump_frames;
@@ -284,7 +457,8 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				dfor = !dfor;
 				break;
 			case KeyEvent.VK_G:
-				dcon = !dcon;
+				integration_type = (integration_type+1)%3;
+				System.out.println("Integration scheme: " + integration_type);
 				break;
 			case KeyEvent.VK_R:
 				fVector.get(mouseRepulsorIndex).setOn(true);
@@ -346,12 +520,6 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	
 	public static void main(String[] args) throws InterruptedException
 	{
-		/*ConjugateGradient cg = new ConjugateGradient(100, 0.0000000001, false);
-		//OpenMapRealMatrix m = new OpenMapRealMatrix(new double[][]{{1,2},{3,4}});
-		OpenMapRealMatrix m = new OpenMapRealMatrix(5, 5);
-		//ArrayRealVector b = new ArrayRealVector(new double[]{7,15});
-		//RealVector x = cg.solve(m, b);
-		System.out.println(m.toString());*/
 		
 		
 		// Instructions
@@ -359,8 +527,10 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		System.out.println("\t Toggle construction/simulation display with the spacebar key\n");
 		System.out.println("\t Dump frames by pressing the 'd' key\n");
 		System.out.println("\t Toggle forces by pressing the 'f' key\n");
-		System.out.println("\t Toggle constraints by pressing the 'g' key\n");
+		System.out.println("\t Toggle constraints by pressing the 'c' key\n");
 		System.out.println("\t Repel particles from cursor by pressing the 'r' key\n");
+		System.out.println("\t Cycle through integration schemes by pressing the 'g' key");
+		System.out.println("\t 0: Euler, 1: Midpoint, 2: Runge-Kutta\n");
 		System.out.println("\t Quit by pressing the 'q' key\n");
 		
 		// Open app
@@ -371,7 +541,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		// Loop
 		while (true)
 		{
-			app.updateParticles();
+			app.performUpdate();
 			app.updateView();
 			
 			Thread.sleep(1);

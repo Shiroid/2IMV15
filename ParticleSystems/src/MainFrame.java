@@ -40,11 +40,13 @@ public class MainFrame extends JFrame
 
 	public void drawForces(Vector<Force> forces)
 	{
+		panel.doDrawForces = true;
 		panel.setForces(forces);
 	}
 
 	public void drawConstraints(Vector<Constraint> constraints)
 	{
+		panel.doDrawConstraints = true;
 		panel.setConstraints(constraints);
 	}
 
@@ -55,6 +57,9 @@ public class MainFrame extends JFrame
 		private Vector<Particle> particles;
 		private Vector<Force> forces;
 		private Vector<Constraint> constraints;
+
+		boolean doDrawForces;
+		boolean doDrawConstraints;
 
 		private double pSize = 0.03;
 
@@ -82,8 +87,10 @@ public class MainFrame extends JFrame
 			Graphics2D g2 = (Graphics2D) g;
 
 			paintParticles(g2);
-			paintForces(g2);
-			paintConstraints(g2);
+			if(doDrawForces) paintForces(g2);
+			if(doDrawConstraints) paintConstraints(g2);
+			doDrawForces = false;
+			doDrawConstraints = false;
 		}
 
 		public void paintParticles(Graphics2D g2)

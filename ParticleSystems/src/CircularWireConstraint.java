@@ -13,25 +13,32 @@ public class CircularWireConstraint extends Constraint {
         this.r = r;
     }
 
+    public CircularWireConstraint(Particle p1, double[] center, double r){
+        Vector<Particle> pVec = new Vector<Particle>();
+        pVec.add(p1);
+        this.setParticles(pVec);
+        setParticles(pVector);
+        this.center = center;
+        this.r = r;
+    }
+
     void setParticles(Vector<Particle> pVector){
         assert (pVector.size() == 1);
         this.pVector = pVector;
     }
 
     @Override
-    ConstraintValue getC0(){
+    double getC0(){
         Particle p0 = pVector.get(0);
         double[] diff = VectorMath.subtract(p0.m_Position, center);
-        return new ConstraintValue(new int[]{p0.id},
-                new double[]{(VectorMath.dotProd(diff, diff) - r*r)/2});
+        return VectorMath.dotProd(diff, diff) - r*r;
     }
 
     @Override
-    ConstraintValue getC1(){
+    double getC1(){
         Particle p0 = pVector.get(0);
         double[] diff = VectorMath.subtract(p0.m_Position, center);
-        return new ConstraintValue(new int[]{p0.id},
-                new double[]{VectorMath.dotProd(diff, p0.m_Velocity)});
+        return 2*VectorMath.dotProd(diff, p0.m_Velocity);
     }
 
     @Override

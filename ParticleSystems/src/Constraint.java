@@ -6,14 +6,15 @@ import java.util.Vector;
 public abstract class Constraint {
     protected Vector<Particle> pVector;
     public int id;
+    protected boolean isOn;
 
     abstract void setParticles(Vector<Particle> pVector);
 
     // Returns the value of the position constraint C
-    abstract ConstraintValue getC0();
+    abstract double getC0();
 
     // Returns the value of the velocity constraint C'
-    abstract ConstraintValue getC1();
+    abstract double getC1();
 
     // Returns the position derivatives of position constraint C
     abstract ConstraintDerivative getCd0();
@@ -24,6 +25,10 @@ public abstract class Constraint {
     // Returns the time derivatives of the position derivatives of position constraint C
     void setID(int i){
         this.id = i;
+    }
+
+    public void setOn(boolean on){
+        this.isOn = on;
     }
 
 
