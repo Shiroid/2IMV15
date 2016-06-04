@@ -51,7 +51,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 	
 	public void initSystem()
 	{
-		double dist = 0.2;
+		double dist = 0.1;
 		double[] center = {0, 0};
 		double[] offset = {dist, 0};
 		
@@ -86,18 +86,73 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 		mouseRepulsorIndex = fVector.size()-1;
 
 		// Add cloth
-		addCloth(15, 15, 0.05, -0.8, -0.3, 0.1, 0.5, true);
-		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.9, true);
+		addCloth(15, 15, 0.05, -0.8, -0.3, 0.1, 0.5, true, true, false);
+		addCloth(8, 8, 0.08, 0.3, -0.5, 0.05, 0.9, true, false, false);
+		addCloth(4, 3, 0.1, 0.0, 0.3, 0.05, 0.9, false, false, false);
+		addHair(20, 0.05, -0.1, -0.8, 0.5, 0.9, 180, true, false, false);
+		//addHair(10, 0.05, 0.0, -0.8, 0.5, 0.9, 180, true, false, true);
+		addHair(20, 0.05, 0.1, -0.8, 0.5, 0.9, 120, true, false, true);
+		addHair(20, 0.05, 0.2, -0.8, 0.5, 0.9, 90, true, false, true);
+		addHair(30, 0.05, 0.3, -0.8, 0.5, 0.9, 60, true, false, true);
 
 		// Constraints for spring
 		addConstraint(new CircularWireConstraint(pVector.get(0), new double[]{center[0]+offset[0], center[1]+offset[1]-offset[0]}, offset[0]));
-		addForce(new SpringForce(pVector.get(0), pVector.get(1), 0.5, 0.5, 0.3));
-		addForce(new SpringForce(pVector.get(1), pVector.get(2), 0.5, 0.5, 0.3));
+		addConstraint(new RodConstraint(pVector.get(0), pVector.get(1), offset[0]));
+		addConstraint(new RodConstraint(pVector.get(1), pVector.get(2), offset[0]));
 		// Angular spring
-		addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 90));
+		//addForce(new AngularSpringForce(pVector.get(1), pVector.get(0), pVector.get(2), 0.0002, 0.001, 90));
 	}
 
-	public void addCloth(int wi, int hi, double di, double bXi, double bYi, double ksi, double kdi, boolean dti){
+	public void addHair(int hi, double di, double bXi, double bYi, double ksi, double kdi, double angle, boolean dti, boolean constrained, boolean doAngles){
+		// Add cloth
+		int pOffset = pVector.size();
+		int h = hi;// hair length
+		double d = di;// Hair particle proximity
+		double baseX = bXi;// X position of upper corner
+		double baseY = bYi;// Y position of upper corner
+		double ks = ksi;// hair spring strength
+		double kd = kdi;// hair spring damping
+		boolean doTether = dti;// Tether the hair
+		double angularForceAdjust = 0.0003;
+		for (int j = 0; j < h; j++){
+			addParticle(new Particle(baseX, baseY + j*d));
+			if(j > 0){
+				if(constrained){
+					addConstraint(new RodConstraint(
+							pVector.get(pOffset+j),
+							pVector.get(pOffset+j-1),
+							d
+					));
+				} else {
+					addForce(new SpringForce(
+							pVector.get(pOffset+j),
+							pVector.get(pOffset+j-1),
+							ks,
+							kd,
+							d
+					));
+				}
+				if(doAngles && j > 1){
+					addForce(new AngularSpringForce(
+							pVector.get(pOffset+j-2),
+							pVector.get(pOffset+j-1),
+							pVector.get(pOffset+j),
+							ks*d*angularForceAdjust,
+							kd*d*angularForceAdjust,
+							angle
+					));
+				}
+			}
+		}
+		if(doTether) {
+			double radius = di;
+			Particle p1 = pVector.get(pOffset);
+			addConstraint(new CircularWireConstraint(p1,
+					new double[]{p1.m_ConstructPos[0], p1.m_ConstructPos[1] + radius}, radius));
+		}
+	}
+
+	public void addCloth(int wi, int hi, double di, double bXi, double bYi, double ksi, double kdi, boolean dti, boolean crossed, boolean constrained){
 		// Add cloth
 		int pOffset = pVector.size();
 		int w = wi;// Cloth width
@@ -113,61 +168,85 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 			for (int j = 0; j < h; j++){
 				addParticle(new Particle(baseX + i*d, baseY + j*d));
 				if(i > 0){
-					addForce(new SpringForce(
-							pVector.get(pOffset+i*h+j),
-							pVector.get(pOffset+(i-1)*h+j),
-							ks,
-							kd,
-							d
-					));
+					if(constrained){
+						addConstraint(new RodConstraint(
+								pVector.get(pOffset+i*h+j),
+								pVector.get(pOffset+(i-1)*h+j),
+								d
+						));
+					} else{
+						addForce(new SpringForce(
+								pVector.get(pOffset+i*h+j),
+								pVector.get(pOffset+(i-1)*h+j),
+								ks,
+								kd,
+								d
+						));
+					}
 				}
 				if(j > 0){
-					addForce(new SpringForce(
-							pVector.get(pOffset+i*h+j),
-							pVector.get(pOffset+i*h+j-1),
-							ks,
-							kd,
-							d
-					));
+					if(constrained){
+						addConstraint(new RodConstraint(
+								pVector.get(pOffset+i*h+j),
+								pVector.get(pOffset+i*h+j-1),
+								d
+						));
+					} else {
+						addForce(new SpringForce(
+								pVector.get(pOffset+i*h+j),
+								pVector.get(pOffset+i*h+j-1),
+								ks,
+								kd,
+								d
+						));
+					}
 				}
-				if(i > 0 && j > 0){
-
-					addForce(new SpringForce(
-							pVector.get(pOffset+i*h+j),
-							pVector.get(pOffset+(i-1)*h+j-1),
-							ks,
-							kd,
-							d*sqrt2
-					));
-				}
-				if(i > 0 && j < h-1){
-
-					addForce(new SpringForce(
-							pVector.get(pOffset+i*h+j),
-							pVector.get(pOffset+(i-1)*h+j+1),
-							ks,
-							kd,
-							d*sqrt2
-					));
+				if(crossed){
+					if(i > 0 && j > 0){
+						if(constrained) {
+							addConstraint(new RodConstraint(
+									pVector.get(pOffset+i*h+j),
+									pVector.get(pOffset+(i-1)*h+j-1),
+									d*sqrt2
+							));
+						} else {
+							addForce(new SpringForce(
+									pVector.get(pOffset+i*h+j),
+									pVector.get(pOffset+(i-1)*h+j-1),
+									ks,
+									kd,
+									d*sqrt2
+							));
+						}
+					}
+					if(i > 0 && j < h-1){
+						if(constrained){
+							addConstraint(new RodConstraint(
+									pVector.get(pOffset+i*h+j),
+									pVector.get(pOffset+(i-1)*h+j+1),
+									d*sqrt2
+							));
+						} else {
+							addForce(new SpringForce(
+									pVector.get(pOffset+i*h+j),
+									pVector.get(pOffset+(i-1)*h+j+1),
+									ks,
+									kd,
+									d*sqrt2
+							));
+						}
+					}
 				}
 			}
 		}
 		if(doTether) {
-			Vector<Particle> p1 = new Vector<Particle>();
-			p1.add(pVector.get(pOffset));
-			TetheredSpringForce t1 = new TetheredSpringForce(
-					p1, tetherStrength, tetherDamping, 0.0
-
-			);
-			t1.setOn(true);
-			Vector<Particle> p2 = new Vector<Particle>();
-			p2.add(pVector.get(pOffset+(w-1)*h));
-			TetheredSpringForce t2 = new TetheredSpringForce(
-					p2, tetherStrength, tetherDamping, 0.0
-			);
-			t2.setOn(true);
-			addForce(t1);
-			addForce(t2);
+			double radius = di;
+			Particle p1 = pVector.get(pOffset);
+			Particle p2  = pVector.get(pOffset+(w-1)*h);
+			addConstraint(new CircularWireConstraint(p1,
+					new double[]{p1.m_ConstructPos[0], p1.m_ConstructPos[1] + radius}, radius));
+			addConstraint(new CircularWireConstraint(p2,
+					new double[]{p2.m_ConstructPos[0], p2.m_ConstructPos[1] + radius}, radius));
 		}
 	}
 	
@@ -276,7 +355,7 @@ public class App implements KeyListener, MouseListener, MouseMotionListener
 				// JWJ* lambda = -J.q. -JWQ -ksC - kdC.
 				OpenMapRealMatrix lhs = J.multiply(W).multiply(JT);
 				RealVector rhs = CScaled.add(CdotScaled).subtract(Jdot.operate(qdot)).subtract(J.multiply(W).operate(Q));
-				ConjugateGradient cg = new ConjugateGradient(gcVecLen + 10, 0.000001, false);
+				ConjugateGradient cg = new ConjugateGradient(2*gcVecLen + 10, 0.000001, false);
 				RealVector lambda = cg.solve(lhs, rhs);
 
 				// Q^ = J* lambda
